@@ -1,0 +1,239 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir>
+
+# fail fast
+set -e
+
+# parse args
+BUILD_DIR=$1
+CACHE_DIR=$2
+
+function indent() {
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+source $BUILD_DIR/_webassets.cfg
+NO_H5BP_NODE_BUILD=YesPlease
+
+LP_DIR=`cd $(dirname $0); cd ..; pwd`
+
+# Node Installation --------------------------
+echo "-----> Installing Node and build dependencies..."
+NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
+NODE_BUILD_DIR=$(mktemp -d -t node_build.XXXXXX)
+git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BUILDPACK_DIR
+mv -f $NODE_BUILDPACK_DIR/vendor/* $LP_DIR/vendor
+mv $NODE_BUILDPACK_DIR/bin/compile $LP_DIR/bin/compile_node
+mv $LP_DIR/vendor/package-webassets.json $NODE_BUILD_DIR/package.json
+$LP_DIR/bin/compile_node $NODE_BUILD_DIR $CACHE_DIR
+echo "       done."
+
+export PATH=$NODE_BUILD_DIR/bin:$NODE_BUILD_DIR/node_modules/.bin:$PATH
+
+# Bower --------------------------------------
+if [[ ! $NO_BOWER && -f $BUILD_DIR/component.json ]]; then
+  echo "-----> Installing components using Bower..."
+  bower install $BOWER_OPTIONS | indent
+  echo "       done."
+fi
+
+# CSS Compilation ----------------------------
+if [[ ! $NO_CSS ]]; then
+
+  # Plugins Script Run -----------------------
+  echo "-----> Compiling plugins..."
+  if [ -f "$BUILD_DIR/plugins/compile" ]; then
+    chmod +x $BUILD_DIR/plugins/compile
+    $BUILD_DIR/plugins/compile $BUILD_DIR $CACHE_DIR
+  fi
+  echo "       done."
+
+  # LESS -------------------------------------
+  if [[ ! $NO_LESS ]]; then
+    echo "-----> Compiling LESS..."
+    find $BUILD_DIR -iregex ".*\.less" \! -path '*/plugins/*' | while read -r lessfile
+    do
+      echo -n "-----> compiling ${lessfile#*$BUILD_DIR/}..." | indent
+      fname=${lessfile%.*}
+      if [[ $NO_SASS ]]; then
+        lessc $LESS_OPTIONS "$lessfile" > "$fname.css" | indent
+      else
+        lessc $LESS_OPTIONS "$lessfile" > "$fname.scss" | indent
+      fi
+      echo "done"
+      rm -f $lessfile
+    done
+    echo "       done."
+  fi
+
+  # Stylus -----------------------------------
+  if [[ ! $NO_STYLUS ]]; then
+    echo "-----> Compiling Stylus..."
+    stylus $STYLUS_OPTIONS $BUILD_DIR | indent
+    echo "       done."
+
+    echo -n "-----> Cleaning Stylus... "
+    find $BUILD_DIR -iregex ".*\.styl" \! -path '*/plugins/*' -delete
+    echo "done"
+  fi
+
+  # SASS -------------------------------------
+  if [[ ! $NO_SASS ]]; then
+  # SASS & Compass Installation ----------------
+    echo "-----> Installing SASS..."
+    RUBY_BUILD_DIR=$(mktemp -d -t ruby_build.XXXXXX)
+    mkdir -p $RUBY_BUILD_DIR/.gem
+    gem install sass --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
+    export GEM_PATH=$RUBY_BUILD_DIR/.gem:$GEM_PATH
+    echo "       done."
+
+    if [ ! -f "$BUILD_DIR/config.rb" ]; then
+      echo "-----> Compiling SASS..."
+      $RUBY_BUILD_DIR/.gem/bin/sass $SASS_OPTIONS --update $BUILD_DIR:"$BUILD_DIR$SASS_OUTPUT_DIR" | indent
+      echo "       done."
+    else
+      echo "-----> Compiling Compass..."
+      gem install compass --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
+      $PWD/.gem/bin/compass compile $COMPASS_OPTIONS $BUILD_DIR | indent
+      echo "       done."
+    fi
+
+    echo -n "-----> Cleaning SASS... "
+    find $BUILD_DIR -iregex ".*\.scss" \! -path '*/plugins/*' -delete
+    find $BUILD_DIR -iregex ".*\.scss" \! -path '*/plugins/*' -delete
+    echo "done"
+  fi
+
+  # Recess -----------------------------------
+  if [[ ! $NO_RECESS ]]; then
+    echo "-----> Recessing CSS files..."
+    find $BUILD_DIR -iregex ".*\.css" | while read -r cssfile
+    do
+      fname=${cssfile%.*}
+      recess "$cssfile" $RECESS_LINT_OPTIONS | indent
+      recess "$cssfile" --compile $RECESS_COMPILE_OPTIONS > "$fname.recess.css"
+      mv -f "$fname.recess.css" "$cssfile"
+    done
+    echo "       done."
+  fi
+
+  # CSS Minification -------------------------
+  if [[ ! $NO_CSS_MIN ]]; then
+    if [[ ! $NO_H5BP_NODE_BUILD && ! $NO_HNBS_CSS ]]; then
+      h5bp $HNBS_CSS_OPTIONS css
+    else
+      echo "-----> Compressing CSS files..."
+      find $BUILD_DIR -iregex ".*\.css" \! -iregex ".*\.min\.css" | while read -r cssfile
+      do
+        echo -n "-----> compressing ${cssfile#*$BUILD_DIR/}..." | indent
+        fname=${cssfile%.*}
+        java -jar $LP_DIR/vendor/yuicompressor-2.4.7.jar --type css -o "$fname.min.css" "$cssfile" | indent
+        echo "done"
+      done
+      echo "       done."
+    fi
+  fi
+fi
+
+# JS Compilation -----------------------------
+if [[ ! $NO_JS ]]; then
+
+  # Coffee-Script ----------------------------
+  if [[ ! $NO_COFFEE_SCRIPT ]]; then
+    # Coffee-Script Import -------------------
+    if [[ -f "$BUILD_DIR/Cakefile" ]]; then
+      echo -n "-----> Making Coffee using Cake..."
+      curr_dir=$PWD
+      cd $BUILD_DIR
+      cake build | indent
+      cd $curr_dir
+      echo "done"
+    elif [[ ! $NO_JS_IMPORTER && ! $NO_CS_IMPORT ]]; then
+      echo "-----> Importing & Compiling coffee-script files..."
+      find $BUILD_DIR -iregex ".*\.coffee" | while read -r csfile
+      do
+        echo -n "-----> applying imports in ${csfile#*$BUILD_DIR/}..." | indent
+        fname=${csfile%.*}
+        importer $IMPORTER_CS_OPTIONS "$csfile" "$fname.js" | indent
+        echo "done"
+      done
+      echo "       done."
+    else
+      echo -n "-----> Making Coffee..."
+      coffee --compile --output $BUILD_DIR $BUILD_DIR | indent
+      echo "done"
+    fi
+
+    # Coffee-Script Clean-up -----------------
+    echo -n "-----> Cleaning coffee... "
+    find $BUILD_DIR -iregex ".*\.coffee" -delete
+    echo "done"
+  fi
+
+  # JS Import --------------------------------
+  if [[ ! $NO_JS_IMPORTER && ! $NO_JS_IMPORT ]]; then
+    echo "-----> Importing JS files..."
+    find $BUILD_DIR -iregex ".*\.js" | while read -r jsfile
+    do
+      echo -n "-----> applying imports in ${jsfile#*$BUILD_DIR/}..." | indent
+      importer "$jsfile" "$jsfile" | indent
+      echo "done"
+    done
+    echo "       done."
+  fi
+
+  # Closure Compilation ----------------------
+  if [[ ! $NO_CLOSURE_COMPILE ]]; then
+    # Closure Compiler Fetch -----------------
+    echo -n "-----> Fetching Closure Compiler... "
+    curl --silent --location http://closure-compiler.googlecode.com/files/compiler-latest.tar.gz | tar xz
+    echo "done"
+
+    # JS Closure compilation -----------------
+    echo "-----> Compiling JS files..."
+    find $BUILD_DIR -iregex ".*\.js" \! -iregex ".*\.min\.js" \! -path '*/libs/*' | while read -r jsfile
+    do
+      echo -n "-----> compiling ${jsfile#*$BUILD_DIR/}..." | indent
+      fname=${jsfile%.*}
+      if [[ ! $NO_JS_SOURCE_MAP ]]; then
+        sm_opts="--create_source_map \"$jsfile.map\" --source_map_format=V3"
+      fi
+      java -jar compiler.jar --js "$jsfile" --js_output_file "$fname.min.js" $sm_opts $CLOSURE_COMPILE_OPTIONS | indent
+      jssha1=`openssl sha1 "$fname.min.js"`
+      jssha1=${jssha1#*= }
+      jssha1=${jssha1:0:8}
+      cp "$fname.min.js" "$fname.$jssha1.js"
+      echo "done"
+    done
+    echo "       done."
+    rm -f compiler.jar
+  fi
+fi
+
+# HTML Compilation ---------------------------
+if [[ ! $NO_HTML ]]; then
+  # Jade -------------------------------------
+  if [[ ! $NO_JADE ]]; then
+    echo "-----> Compiling Jade..."
+    jade $JADE_OPTIONS $BUILD_DIR | indent
+    echo "       done."
+
+    echo -n "-----> Cleaning Jade... "
+    find $BUILD_DIR -iregex ".*\.jade" -delete
+    echo "done"
+  fi
+fi
+
+# H5BP Node Build Script ---------------------
+if [[ ! $NO_H5BP_NODE_BUILD ]]; then
+  h5bp rev
+  h5bp usemin
+fi
+
+# Cleanup ------------------------------------
+rm -fr $NODE_BUILDPACK_DIR
+rm -fr $NODE_BUILD_DIR

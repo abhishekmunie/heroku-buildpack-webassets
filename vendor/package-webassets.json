@@ -2,17 +2,8 @@
   "name": "webassets-node",
   "version": "1.0.1",
   "engines": {
-    "node": ">=0.8.8",
+    "node": ">=0.8.15",
     "npm": ">=0.2.15"
   },
   "dependencies": {
-    "coffee-script":     "latest",
-    "node-build-script": "http://github.com/h5bp/node-build-script/tarball/master",
-    "bower":             "latest",
-    "importer":          "latest",
-    "less":              "latest",
-    "recess":            "latest",
-    "stylus":            "latest",
-    "jade":              "latest"
-  }
-}
+    "coffee-script":     "latest"

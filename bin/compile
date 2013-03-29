@@ -34,7 +34,6 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
   NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
   NODE_BUILD_DIR=$(mktemp -d -t node_build.XXXXXX)
   git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BUILDPACK_DIR
-
   mv $LP_DIR/vendor/package-webassets.json $NODE_BUILD_DIR/package.json
   if [[ ! $NO_GRUNT ]]; then
     (echo ","; echo -n "    \"grunt\":             \"latest\"") >> $NODE_BUILD_DIR/package.json
@@ -94,7 +93,7 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
       export GEM_PATH=$RUBY_BUILD_DIR/.gem:$GEM_PATH
       echo "       done."
       if [ -f "$BUILD_DIR/config.rb" ]; then
-        echo "-----> Installing SASS..."
+        echo "-----> Installing Compass..."
         gem install compass --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
         echo "       done."
       fi

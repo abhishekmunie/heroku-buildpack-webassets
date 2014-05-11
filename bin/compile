@@ -332,6 +332,16 @@ if [[ $USE_GRUNT ]]; then
   eval grunt $GRUNT_OPTIONS
 fi
 
+if [[ $USE_STATIC_SERVER ]]; then
+  status "Initializing Static Server..."
+  STATIC_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
+  git clone --quiet https://github.com/abhishekmunie/heroku-buildpack-static.git $STATIC_BUILDPACK_DIR
+  chmod -f +x $STATIC_BUILDPACK_DIR/bin/{detect,compile,release} || true
+  $STATIC_BUILDPACK_DIR/bin/compile $build_dir $cache_dir
+  rm -fr $STATIC_BUILDPACK_DIR
+fi
+
 # Cleanup ------------------------------------
 rm -fr $NODE_BUILDPACK_DIR
 rm -fr $NODE_BUILD_DIR
+rm -fr $STATIC_BUILDPACK_DIR

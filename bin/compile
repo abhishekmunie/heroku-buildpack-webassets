@@ -30,50 +30,56 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
 
   # Node Installation --------------------------
   status "Installing Node and build dependencies..."
-  NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
-  NODE_BUILD_DIR=$(mktemp -d -t node_build.XXXXXX)
-  git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BUILDPACK_DIR
-  chmod -f +x $NODE_BUILDPACK_DIR/bin/{detect,compile,release} || true
   mv $bp_dir/vendor/package-webassets.json $NODE_BUILD_DIR/package.json
   if [[ ! $NO_GRUNT ]]; then
-    (echo ","; echo -n "    \"grunt\":             \"latest\"") >> $NODE_BUILD_DIR/package.json
+    (echo ","; echo -n "    \"grunt\": \"latest\"") >> $NODE_BUILD_DIR/package.json
   fi
   if [[ ! $GRUNT_ONLY ]]; then
     if [[ ! $NO_BOWER ]]; then
-      (echo ","; echo -n "    \"bower\":             \"latest\"") >> $NODE_BUILD_DIR/package.json
+      (echo ","; echo -n "    \"bower\": \"latest\"") >> $NODE_BUILD_DIR/package.json
     fi
     if [[ ! $NO_CSS ]]; then
       if [[ ! $NO_LESS ]]; then
-        (echo ","; echo -n "    \"less\":              \"latest\"") >> $NODE_BUILD_DIR/package.json
+        (echo ","; echo -n "    \"grunt-contrib-less\": \"latest\"") >> $NODE_BUILD_DIR/package.json
+      fi
+      if [[ ! $NO_SASS ]]; then
+        if [[ condition ]]; then
+          (echo ","; echo -n "    \"grunt-contrib-compass\": \"latest\"") >> $NODE_BUILD_DIR/package.json
+        fi
       fi
       if [[ ! $NO_STYLUS ]]; then
-        (echo ","; echo -n "    \"stylus\":            \"latest\"") >> $NODE_BUILD_DIR/package.json
+        (echo ","; echo -n "    \"grunt-contrib-stylus\": \"latest\"") >> $NODE_BUILD_DIR/package.json
       fi
       if [[ ! $NO_BLESS ]]; then
-        (echo ","; echo -n "    \"bless\":             \"latest\"") >> $NODE_BUILD_DIR/package.json
+        (echo ","; echo -n "    \"grunt-bless\": \"latest\"") >> $NODE_BUILD_DIR/package.json
       fi
       if [[ ! $NO_RECESS ]]; then
-        (echo ","; echo -n "    \"recess\":            \"latest\"") >> $NODE_BUILD_DIR/package.json
+        (echo ","; echo -n "    \"grunt-recess\": \"latest\"") >> $NODE_BUILD_DIR/package.json
       fi
     fi
     if [[ ! $NO_JS ]]; then
       if [[ ! $NO_JS_IMPORTER || ! $NO_CS_IMPORT ]]; then
-        (echo ","; echo -n "    \"importer\":          \"latest\"") >> $NODE_BUILD_DIR/package.json
+        (echo ","; echo -n "    \"importer\": \"latest\"") >> $NODE_BUILD_DIR/package.json
       fi
       if [[ ! $NO_REQUIREJS ]]; then
-        (echo ","; echo -n "    \"requirejs\":         \"latest\"") >> $NODE_BUILD_DIR/package.json
+        (echo ","; echo -n "    \"requirejs\": \"latest\"") >> $NODE_BUILD_DIR/package.json
       fi
     fi
     if [[ ! $NO_HTML ]]; then
       if [[ ! $NO_JADE ]]; then
-        (echo ","; echo -n "    \"jade\":              \"latest\"") >> $NODE_BUILD_DIR/package.json
+        (echo ","; echo -n "    \"jade\": \"latest\"") >> $NODE_BUILD_DIR/package.json
       fi
     fi
     if [[ ! $NO_GRUNT ]]; then
-      (echo ","; echo -n "    \"grunt-cli\":         \"latest\"") >> $NODE_BUILD_DIR/package.json
+      (echo ","; echo -n "    \"grunt-cli\": \"latest\"") >> $NODE_BUILD_DIR/package.json
     fi
   fi
-  (echo ""; echo "  }"; echo -n "}") >> $NODE_BUILD_DIR/package.json
+  (echo ""; echo "  }"; echo "}") >> $NODE_BUILD_DIR/package.json
+
+  NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
+  NODE_BUILD_DIR=$(mktemp -d -t node_build.XXXXXX)
+  git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BUILDPACK_DIR
+  chmod -f +x $NODE_BUILDPACK_DIR/bin/{detect,compile,release} || true
   $NODE_BUILDPACK_DIR/bin/compile $NODE_BUILD_DIR $cache_dir
   export PATH=$NODE_BUILD_DIR/vendor/node/bin:$NODE_BUILD_DIR/bin:$NODE_BUILD_DIR/node_modules/.bin:$PATH
   echo "done." | indent
@@ -140,232 +146,12 @@ if [[ ! $GRUNT_ONLY ]]; then
     eval bower install $BOWER_OPTIONS | indent
     echo "done." | indent
   fi
-
-  # CSS Compilation ----------------------------
-  if [[ ! $NO_CSS ]]; then
-
-    # Plugins Script Run -----------------------
-    status "Compiling plugins..."
-    if [ -f "$build_dir/plugins/compile" ]; then
-      chmod +x $build_dir/plugins/compile
-      $build_dir/plugins/compile $build_dir $cache_dir
-    fi
-    echo "done." | indent
-
-    $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --less "$build_dir"
-
-    # LESS -------------------------------------
-    if [[ ! $NO_LESS ]]; then
-      status "Compiling LESS..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --less --print0 "$build_dir" | while read -d $'\0' lessfile
-      do
-        echo -n "-----> compiling ${lessfile}... " | indent
-        fname=${lessfile%.*}
-        if [[ $NO_SASS ]]; then
-          eval lessc $LESS_OPTIONS "$lessfile" > "$fname.css" | indent
-        else
-          eval lessc $LESS_OPTIONS "$lessfile" > "$fname.scss" | indent
-        fi
-        echo "done"
-      done
-      echo "done." | indent
-
-      echo -n "-----> Cleaning LESS... "
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --less --print0 "$build_dir" | xargs -0 rm
-      echo "done"
-    fi\
-    # Stylus -----------------------------------
-    if [[ ! $NO_STYLUS ]]; then
-      status "Compiling Stylus..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --stylus --print0 "$build_dir" | while read -d $'\0' stylfile
-      do
-        echo "        compiling ${stylfile#*$build_dir/}... " | indent
-        eval stylus $STYLUS_OPTIONS "$stylfile" | indent | indent
-        echo "        done."
-      done
-      echo "done." | indent
-
-      echo -n "-----> Cleaning Stylus... "
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --stylus --print0 "$build_dir" | xargs -0 rm
-      echo "done"
-    fi
-
-    if [[ ! $NO_BLESS ]]; then
-       blessc
-    fi
-
-    # SASS -------------------------------------
-    if [[ ! $NO_SASS ]]; then
-      if [[ ! -f "$build_dir/config.rb" ]]; then
-        status "Compiling SASS..."
-        $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --sass --print0 "$build_dir" | while read -d $'\0' sassfile
-        do
-          echo -n "-----> compiling ${sassfile#*$build_dir/}... " | indent
-          eval $RUBY_BUILD_DIR/.gem/bin/sass $SASS_OPTIONS --update "$sassfile":"$sassfile" | indent
-          echo "done"
-        done
-        echo "done." | indent
-      else
-        status "Compiling Compass..."
-        eval $PWD/.gem/bin/compass compile $COMPASS_OPTIONS $build_dir | indent
-        echo "done." | indent
-      fi
-
-      echo -n "-----> Cleaning SASS... "
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --sass --print0 "$build_dir" | xargs -0 rm
-      echo "done"
-    fi
-
-    # Recess -----------------------------------
-    if [[ ! $NO_RECESS ]]; then
-      status "Recessing CSS files..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --css --print0 "$build_dir" | while read -d $'\0' cssfile
-      do
-        fname=${cssfile%.*}
-        eval recess "$cssfile" $RECESS_LINT_OPTIONS | indent
-        eval recess "$cssfile" --compile $RECESS_COMPILE_OPTIONS > "$fname.recess.css"; mv -f "$fname.recess.css" "$cssfile"
-      done
-      echo "done." | indent
-    fi
-
-    # CSS Minification -------------------------
-    if [[ ! $NO_CSS_MIN ]]; then
-      status "Compressing CSS files..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --css --print0 "$build_dir" | while read -d $'\0' cssfile
-      do
-        echo -n "-----> compressing ${cssfile#*$build_dir/}... " | indent
-        fname=${cssfile%.*}
-        eval java -jar $bp_dir/vendor/yuicompressor-2.4.7.jar --type css $YUICOMPRESSOR_OPTIONS -o "$fname.min.css" "$cssfile" | indent
-        csssha1=`openssl sha1 "$fname.min.css"`
-        csssha1=${csssha1#*= }
-        csssha1=${csssha1:0:8}
-        cp "$fname.min.css" "$fname.$csssha1.css"
-        echo "done"
-      done
-      echo "done." | indent
-    fi
-  fi
-
-  # JS Compilation -----------------------------
-  if [[ ! $NO_JS ]]; then
-
-    # Coffee-Script ----------------------------
-    if [[ ! $NO_COFFEE_SCRIPT ]]; then
-      # Coffee-Script Import -------------------
-      if [[ -f "$build_dir/Cakefile" ]]; then
-        echo -n "-----> Making Coffee using Cake..."
-        curr_dir=$PWD; cd $build_dir
-        eval cake build $CAKE_OPTIONS | indent
-        cd $curr_dir; unset curr_dir
-        echo "done"
-      elif [[ ! $NO_CS_IMPORTER ]]; then
-        status "Importing & Compiling coffee-script files..."
-        $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --coffee --print0 "$build_dir" | while read -d $'\0' csfile
-        do
-          echo -n "-----> applying imports in ${csfile#*$build_dir/}... " | indent
-          eval importer $importer_sm_optn $IMPORTER_CS_OPTIONS "$csfile" "${csfile%.*}.js" | indent
-          echo "done"
-        done
-        echo "done." | indent
-      else
-        echo -n "-----> Making Coffee... "
-        $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --coffee --print0 "$build_dir" | while read -d $'\0' csfile
-        do eval coffee $CS_OPTIONS $cs_sm_optn --compile --output "$csfile" "$csfile" | indent; done
-        echo "done"
-      fi
-
-      # Coffee-Script Clean-up -----------------
-      echo -n "-----> Cleaning coffee... "
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --coffee --print0 "$build_dir" | xargs -0 rm
-      echo "done"
-    fi
-
-    # JS Import --------------------------------
-    if [[ ! $NO_JS_IMPORTER ]]; then
-      status "Importing JS files..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --js --print0 "$build_dir" | while read -d $'\0' jsfile
-      do
-        echo -n "-----> applying imports in ${jsfile#*$build_dir/}... " | indent
-        eval importer $importer_sm_optn $IMPORTER_JS_OPTIONS "$jsfile" "$jsfile" | indent
-        echo "done"
-      done
-      echo "done." | indent
-    fi
-
-    # Require.js -------------------------------
-    if [[ $REQUIREJS ]]; then
-      status "Running Require.js files..."
-      eval r.js -o baseUrl=$build_dir $REQUIREJS_OPTIONS
-      echo "done." | indent
-    fi
-
-    # Closure Compilation ----------------------
-    if [[ ! $NO_CLOSURE_COMPILE ]]; then
-      # JS Closure compilation -----------------
-      status "Compiling JS files..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --js --print0 "$build_dir" | while read -d $'\0' jsfile
-      do
-        echo -n "-----> compiling ${jsfile#*$build_dir/}... " | indent
-        fname=${jsfile%.*}
-        if [[ ! $NO_SOURCE_MAP ]]; then
-          cc_sm_optn="--create_source_map \"$fname.min.map\" --source_map_format=V3"
-        fi
-        eval java -jar $bp_dir/vendor/compiler.jar --js "$jsfile" --js_output_file "$fname.min.js" $cc_sm_opts $CLOSURE_COMPILE_OPTIONS | indent
-        jssha1=`openssl sha1 "$fname.min.js"`
-        jssha1=${jssha1#*= }
-        jssha1=${jssha1:0:8}
-        cp "$fname.min.js" "$fname.$jssha1.js"
-        echo "done"
-      done
-      echo "done." | indent
-    fi
-  fi
-
-  # HTML Compilation ---------------------------
-  if [[ ! $NO_HTML ]]; then
-    # Jade -------------------------------------
-    if [[ ! $NO_JADE ]]; then
-      status "Compiling Jade..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --jade --print0 "$build_dir" | while read -d $'\0' jadefile
-      do eval jade $JADE_OPTIONS  "$jadefile" | indent; done
-      echo "done." | indent
-
-      echo -n "-----> Cleaning Jade... "
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --jade --print0 "$build_dir" | xargs -0 rm
-      echo "done"
-    fi
-
-    # Haml -------------------------------------\
-    if [[ ! $NO_HAML ]]; then
-      status "Compiling Haml..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --haml --print0 "$build_dir" | while read -d $'\0' hamlfile
-      do eval haml $HAML_OPTIONS  "$hamlfile" | indent; done
-      echo "done." | indent
-
-      echo -n "-----> Cleaning Haml... "
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --haml --print0 "$build_dir" | xargs -0 rm
-      echo "done"
-    fi
-
-    # HTML Compression -------------------------
-    if [[ ! $NO_HTML_COMPRESSION ]]; then
-      status "Compressing HTML..."
-      $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --jade --print0 "$build_dir" | while read -d $'\0' htmlfile
-      do
-        echo -n "-----> compiling ${htmlfile#*$build_dir/}... " | indent
-        eval java -jar $bp_dir/vendor/htmlcompressor-1.5.3.jar $HTML_COMPRESSOR_OPTIONS "$htmlfile" | indent
-        echo "done"
-      done
-      echo "done." | indent
-    fi
-  fi
-
 fi
 
 # Grunt Tasks --------------------------------
 if [[ $USE_GRUNT ]]; then
   cd $build_dir
-  eval grunt $GRUNT_OPTIONS
+  grunt $GRUNT_OPTIONS heroku
 fi
 
 if [[ $USE_STATIC_SERVER ]]; then

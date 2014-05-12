@@ -84,7 +84,6 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
     echo -n "-----> Installing Ack!(http://beyondgrep.com)... "
     curl --silent http://beyondgrep.com/ack-2.12-single-file > ~/bin/ack && chmod 0755 ~/bin/ack
     export PATH=~/bin:$PATH
-    (echo "--type-set=less=.less"; echo "--type-set=stylus=.styl"; echo "--type-set=sass=.sass"; echo "--type-set=scss=.scss"; echo "--type-set=coffee=.coffee"; echo "--type-set=jade=.jade"; echo "--type-set=haml=.haml") > ~/.ackrc
     echo "done"
 
     RUBY_BUILD_DIR=$(mktemp -d -t ruby_build.XXXXXX)
@@ -162,7 +161,7 @@ if [[ ! $GRUNT_ONLY ]]; then
     # LESS -------------------------------------
     if [[ ! $NO_LESS ]]; then
       status "Compiling LESS..."
-      ack --less -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' lessfile
+      ack --less -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' lessfile
       do
         echo -n "-----> compiling ${lessfile#*$build_dir/}... " | indent
         fname=${lessfile%.*}
@@ -176,13 +175,13 @@ if [[ ! $GRUNT_ONLY ]]; then
       echo "done." | indent
 
       echo -n "-----> Cleaning LESS... "
-      ack --less -g $EXCLUDE_DIRS --print0 $build_dir | xargs -0 rm
+      ack --less -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | xargs -0 rm
       echo "done"
     fi\
     # Stylus -----------------------------------
     if [[ ! $NO_STYLUS ]]; then
       status "Compiling Stylus..."
-      ack --stylus -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' stylfile
+      ack --stylus -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' stylfile
       do
         echo "        compiling ${stylfile#*$build_dir/}... " | indent
         eval stylus $STYLUS_OPTIONS "$stylfile" | indent | indent
@@ -191,7 +190,7 @@ if [[ ! $GRUNT_ONLY ]]; then
       echo "done." | indent
 
       echo -n "-----> Cleaning Stylus... "
-      ack --stylus -g $EXCLUDE_DIRS --print0 $build_dir | xargs -0 rm
+      ack --stylus -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | xargs -0 rm
       echo "done"
     fi
 
@@ -203,7 +202,7 @@ if [[ ! $GRUNT_ONLY ]]; then
     if [[ ! $NO_SASS ]]; then
       if [[ ! -f "$build_dir/config.rb" ]]; then
         status "Compiling SASS..."
-        ack --sass --scss -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' sassfile
+        ack --sass --scss -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' sassfile
         do
           echo -n "-----> compiling ${sassfile#*$build_dir/}... " | indent
           eval $RUBY_BUILD_DIR/.gem/bin/sass $SASS_OPTIONS --update "$sassfile":"$sassfile" | indent
@@ -217,14 +216,14 @@ if [[ ! $GRUNT_ONLY ]]; then
       fi
 
       echo -n "-----> Cleaning SASS... "
-      ack --sass --scss -g $EXCLUDE_DIRS --print0 $build_dir | xargs -0 rm
+      ack --sass --scss -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | xargs -0 rm
       echo "done"
     fi
 
     # Recess -----------------------------------
     if [[ ! $NO_RECESS ]]; then
       status "Recessing CSS files..."
-      ack --css -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' cssfile
+      ack --css -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' cssfile
       do
         fname=${cssfile%.*}
         eval recess "$cssfile" $RECESS_LINT_OPTIONS | indent
@@ -236,7 +235,7 @@ if [[ ! $GRUNT_ONLY ]]; then
     # CSS Minification -------------------------
     if [[ ! $NO_CSS_MIN ]]; then
       status "Compressing CSS files..."
-      ack --css -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' cssfile
+      ack --css -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' cssfile
       do
         echo -n "-----> compressing ${cssfile#*$build_dir/}... " | indent
         fname=${cssfile%.*}
@@ -265,7 +264,7 @@ if [[ ! $GRUNT_ONLY ]]; then
         echo "done"
       elif [[ ! $NO_CS_IMPORTER ]]; then
         status "Importing & Compiling coffee-script files..."
-        ack --coffee -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' csfile
+        ack --coffee -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' csfile
         do
           echo -n "-----> applying imports in ${csfile#*$build_dir/}... " | indent
           eval importer $importer_sm_optn $IMPORTER_CS_OPTIONS "$csfile" "${csfile%.*}.js" | indent
@@ -274,21 +273,21 @@ if [[ ! $GRUNT_ONLY ]]; then
         echo "done." | indent
       else
         echo -n "-----> Making Coffee... "
-        ack --coffee -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' csfile
+        ack --coffee -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' csfile
         do eval coffee $CS_OPTIONS $cs_sm_optn --compile --output "$csfile" "$csfile" | indent; done
         echo "done"
       fi
 
       # Coffee-Script Clean-up -----------------
       echo -n "-----> Cleaning coffee... "
-      ack --coffee -g $EXCLUDE_DIRS --print0 $build_dir | xargs -0 rm
+      ack --coffee -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | xargs -0 rm
       echo "done"
     fi
 
     # JS Import --------------------------------
     if [[ ! $NO_JS_IMPORTER ]]; then
       status "Importing JS files..."
-      ack --js -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' jsfile
+      ack --js -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' jsfile
       do
         echo -n "-----> applying imports in ${jsfile#*$build_dir/}... " | indent
         eval importer $importer_sm_optn $IMPORTER_JS_OPTIONS "$jsfile" "$jsfile" | indent
@@ -308,7 +307,7 @@ if [[ ! $GRUNT_ONLY ]]; then
     if [[ ! $NO_CLOSURE_COMPILE ]]; then
       # JS Closure compilation -----------------
       status "Compiling JS files..."
-      ack --js -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' jsfile
+      ack --js -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' jsfile
       do
         echo -n "-----> compiling ${jsfile#*$build_dir/}... " | indent
         fname=${jsfile%.*}
@@ -331,31 +330,31 @@ if [[ ! $GRUNT_ONLY ]]; then
     # Jade -------------------------------------
     if [[ ! $NO_JADE ]]; then
       status "Compiling Jade..."
-      ack --jade -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' jadefile
+      ack --jade -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' jadefile
       do eval jade $JADE_OPTIONS  "$jadefile" | indent; done
       echo "done." | indent
 
       echo -n "-----> Cleaning Jade... "
-      ack --jade -g $EXCLUDE_DIRS --print0 $build_dir | xargs -0 rm
+      ack --jade -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | xargs -0 rm
       echo "done"
     fi
 
     # Haml -------------------------------------\
     if [[ ! $NO_HAML ]]; then
       status "Compiling Haml..."
-      ack --haml -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' hamlfile
+      ack --haml -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' hamlfile
       do eval haml $HAML_OPTIONS  "$hamlfile" | indent; done
       echo "done." | indent
 
       echo -n "-----> Cleaning Haml... "
-      ack --haml -g $EXCLUDE_DIRS --print0 $build_dir | xargs -0 rm
+      ack --haml -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | xargs -0 rm
       echo "done"
     fi
 
     # HTML Compression -------------------------
     if [[ ! $NO_HTML_COMPRESSION ]]; then
       status "Compressing HTML..."
-      ack --jade -g $EXCLUDE_DIRS --print0 $build_dir | while read -d $'\0' htmlfile
+      ack --jade -f --ackrc=$bp_dir/vendor/.ackrc --print0 $build_dir | while read -d $'\0' htmlfile
       do
         echo -n "-----> compiling ${htmlfile#*$build_dir/}... " | indent
         eval java -jar $bp_dir/vendor/htmlcompressor-1.5.3.jar $HTML_COMPRESSOR_OPTIONS "$htmlfile" | indent

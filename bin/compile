@@ -40,6 +40,20 @@ if [ -f $TMP_BUILD_DIR/grunt-package.json ]; then
   mv $TMP_BUILD_DIR/grunt-package.json $TMP_BUILD_DIR/package.json
 fi
 
+if [ -f $TMP_BUILD_DIR/grunt-Gemfile ]; then
+  if [ -f $TMP_BUILD_DIR/Gemfile ]; then
+    mv $TMP_BUILD_DIR/Gemfile $build_dir/Gemfile
+  fi
+  mv $TMP_BUILD_DIR/grunt-Gemfile $TMP_BUILD_DIR/Gemfile
+fi
+
+if [ -f $TMP_BUILD_DIR/grunt-Gemfile.lock ]; then
+  if [ -f $TMP_BUILD_DIR/Gemfile.lock ]; then
+    mv $TMP_BUILD_DIR/Gemfile.lock $build_dir/Gemfile.lock
+  fi
+  mv $TMP_BUILD_DIR/grunt-Gemfile.lock $TMP_BUILD_DIR/Gemfile.lock
+fi
+
 if [ ! -f $TMP_BUILD_DIR/package.json ]; then
   mv $bp_dir/vendor/package-webassets.json $TMP_BUILD_DIR/package.json
 fi

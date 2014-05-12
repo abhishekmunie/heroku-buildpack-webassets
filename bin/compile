@@ -104,7 +104,7 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
         # Bourbon Installation -----------------------
         if [[ ! $NO_BOURBON ]]; then
           status "Installing Bourbon..."
-          gem install bourbon --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
+          # gem install bourbon --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
           echo "done." | indent
         fi
       fi

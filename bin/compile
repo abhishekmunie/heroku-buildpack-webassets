@@ -20,7 +20,7 @@ source $bp_dir/bin/common.sh
 
 # Default Configurations -----------------------
 HTML_COMPRESSOR_OPTIONS='--recursive --simple-bool-attr --preserve-server-script --compress-css --compress-js --js-compressor closure -o'
-EXCLUDE_DIRS='--ignore-file=\..*|_.*|bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|tmp|node_modules|bin|plugins|libs|components'
+EXCLUDE_DIRS='--ignore-file=(\..*|_.*|bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|tmp|node_modules|bin|plugins|libs|components)'
 
 source $build_dir/_webassets.cfg
 

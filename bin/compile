@@ -25,8 +25,10 @@ RUBY_BUILDPACK_DIR=$(mktemp -d -t ruby.XXXXXX)
 NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
 TMP_BUILD_DIR=$(mktemp -d -t tmp_build.XXXXXX)
 
+mv $build_dir/* $TMP_BUILD_DIR
+
 # Dependencies Installation --------------------
-if [ -f $build_dir/grunt.js ] || [ -f $build_dir/Gruntfile.js ] || [ -f $build_dir/Gruntfile.coffee ]; then
+if [ -f $TMP_BUILD_DIR/grunt.js ] || [ -f $TMP_BUILD_DIR/Gruntfile.js ] || [ -f $TMP_BUILD_DIR/Gruntfile.coffee ]; then
   status "Using existing Gruntfile."
 else
   status "Using default Gruntfile."
@@ -34,30 +36,38 @@ else
 fi
 
 if [ -f $TMP_BUILD_DIR/grunt-package.json ]; then
+  status "Using existing grunt-package."
   if [ -f $TMP_BUILD_DIR/package.json ]; then
+    status "Preserving existing grunt-package."
     mv $TMP_BUILD_DIR/package.json $build_dir/package.json
   fi
   mv $TMP_BUILD_DIR/grunt-package.json $TMP_BUILD_DIR/package.json
 fi
 
 if [ -f $TMP_BUILD_DIR/grunt-Gemfile ]; then
+  status "Using existing grunt-Gemfile."
   if [ -f $TMP_BUILD_DIR/Gemfile ]; then
+    status "Preserving existing Gemfile."
     mv $TMP_BUILD_DIR/Gemfile $build_dir/Gemfile
   fi
   mv $TMP_BUILD_DIR/grunt-Gemfile $TMP_BUILD_DIR/Gemfile
 fi
 
 if [ -f $TMP_BUILD_DIR/grunt-Gemfile.lock ]; then
+  status "Using existing grunt-Gemfile.lock."
   if [ -f $TMP_BUILD_DIR/Gemfile.lock ]; then
+    status "Preserving existing Gemfile.lock."
     mv $TMP_BUILD_DIR/Gemfile.lock $build_dir/Gemfile.lock
   fi
   mv $TMP_BUILD_DIR/grunt-Gemfile.lock $TMP_BUILD_DIR/Gemfile.lock
 fi
 
 if [ ! -f $TMP_BUILD_DIR/package.json ]; then
+  status "Using default package."
   mv $bp_dir/vendor/package-webassets.json $TMP_BUILD_DIR/package.json
 fi
 if [ ! -f $TMP_BUILD_DIR/Gemfile.lock ]; then
+  status "Using default Gemfile.lock."
   mv $bp_dir/vendor/Gemfile.lock $TMP_BUILD_DIR/
 fi
 

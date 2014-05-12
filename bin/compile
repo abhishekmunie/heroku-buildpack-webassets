@@ -75,9 +75,8 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
   fi
   (echo ""; echo "  }"; echo -n "}") >> $NODE_BUILD_DIR/package.json
   $NODE_BUILDPACK_DIR/bin/compile $NODE_BUILD_DIR $cache_dir
+  export PATH=$NODE_BUILD_DIR/vendor/node/bin:$NODE_BUILD_DIR/bin:$NODE_BUILD_DIR/node_modules/.bin:$PATH
   echo "done." | indent
-
-  export PATH=$NODE_BUILD_DIR/bin:$NODE_BUILD_DIR/node_modules/.bin:$PATH
 
   if [[ ! $GRUNT_ONLY ]]; then
 
@@ -161,7 +160,7 @@ if [[ ! $GRUNT_ONLY ]]; then
       status "Compiling LESS..."
       $bp_dir/vendor/ack --noenv --ackrc=$bp_dir/vendor/.ackrc -f --less --print0 $build_dir | while read -d $'\0' lessfile
       do
-        echo -n "-----> compiling ${lessfile#*$build_dir/}... " | indent
+        echo -n "-----> compiling ${lessfile}... " | indent
         fname=${lessfile%.*}
         if [[ $NO_SASS ]]; then
           eval lessc $LESS_OPTIONS "$lessfile" > "$fname.css" | indent

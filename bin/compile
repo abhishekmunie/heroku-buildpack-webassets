@@ -158,6 +158,8 @@ if [[ ! $GRUNT_ONLY ]]; then
     fi
     echo "done." | indent
 
+    ack --ackrc=$bp_dir/vendor/.ackrc --dump
+
     # LESS -------------------------------------
     if [[ ! $NO_LESS ]]; then
       status "Compiling LESS..."

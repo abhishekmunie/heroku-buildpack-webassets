@@ -82,8 +82,7 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
   if [[ ! $GRUNT_ONLY ]]; then
     # Ack! Installation ----------------------------
     echo -n "-----> Installing Ack!(http://beyondgrep.com)... "
-    curl --silent http://beyondgrep.com/ack-2.12-single-file > ~/bin/ack && chmod 0755 ~/bin/ack
-    export PATH=~/bin:$PATH
+    export PATH=$bp_dir/vendor/ack:$PATH
     echo "done"
 
     RUBY_BUILD_DIR=$(mktemp -d -t ruby_build.XXXXXX)

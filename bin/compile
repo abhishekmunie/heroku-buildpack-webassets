@@ -76,7 +76,7 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
   fi
   (echo ""; echo "  }"; echo -n "}") >> $NODE_BUILD_DIR/package.json
   $NODE_BUILDPACK_DIR/bin/compile $NODE_BUILD_DIR $cache_dir
-  echo "       done."
+  echo "done." | indent
 
   export PATH=$NODE_BUILD_DIR/bin:$NODE_BUILD_DIR/node_modules/.bin:$PATH
 
@@ -95,31 +95,31 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
         status "Installing SASS..."
         mkdir -p $RUBY_BUILD_DIR/.gem
         gem install sass --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-        echo "       done."
+        echo "done." | indent
         if [ -f "$build_dir/config.rb" ]; then
           status "Installing Compass..."
           gem install compass --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-          echo "       done."
+          echo "done." | indent
         fi
         # Bourbon Installation -----------------------
         if [[ ! $NO_BOURBON ]]; then
           status "Installing Bourbon..."
           gem install bourbon --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-          echo "       done."
+          echo "done." | indent
         fi
       fi
     fi
 
     if [[ ! $NO_HTML ]]; then
       if [[ ! $NO_HAML ]]; then
-        status "Installing Bourbon..."
+        status "Installing Haml..."
         gem install haml --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-        echo "       done."
+        echo "done." | indent
       fi
       if [[ ! $NO_SLIM ]]; then
         status "Installing Slim..."
         gem install slim --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-        echo "       done."
+        echo "done." | indent
       fi
     fi
     export GEM_PATH=$RUBY_BUILD_DIR/.gem:$GEM_PATH
@@ -145,7 +145,7 @@ if [[ ! $GRUNT_ONLY ]]; then
   if [[ ! $NO_BOWER && -f $build_dir/component.json ]]; then
     status "Installing components using Bower..."
     eval bower install $BOWER_OPTIONS | indent
-    echo "       done."
+    echo "done." | indent
   fi
 
   # CSS Compilation ----------------------------
@@ -157,7 +157,7 @@ if [[ ! $GRUNT_ONLY ]]; then
       chmod +x $build_dir/plugins/compile
       $build_dir/plugins/compile $build_dir $cache_dir
     fi
-    echo "       done."
+    echo "done." | indent
 
     # LESS -------------------------------------
     if [[ ! $NO_LESS ]]; then
@@ -173,7 +173,7 @@ if [[ ! $GRUNT_ONLY ]]; then
         fi
         echo "done"
       done
-      echo "       done."
+      echo "done." | indent
 
       echo -n "-----> Cleaning Less... "
       ack --less -g $EXCLUDE_DIRS --invert-file-match --print0 $build_dir | xargs -0 rm
@@ -188,7 +188,7 @@ if [[ ! $GRUNT_ONLY ]]; then
         eval stylus $STYLUS_OPTIONS "$stylfile" | indent | indent
         echo "        done."
       done
-      echo "       done."
+      echo "done." | indent
 
       echo -n "-----> Cleaning Stylus... "
       ack --stylus -g $EXCLUDE_DIRS --invert-file-match --print0 $build_dir | xargs -0 rm
@@ -209,11 +209,11 @@ if [[ ! $GRUNT_ONLY ]]; then
           eval $RUBY_BUILD_DIR/.gem/bin/sass $SASS_OPTIONS --update "$sassfile":"$sassfile" | indent
           echo "done"
         done
-        echo "       done."
+        echo "done." | indent
       else
         status "Compiling Compass..."
         eval $PWD/.gem/bin/compass compile $COMPASS_OPTIONS $build_dir | indent
-        echo "       done."
+        echo "done." | indent
       fi
 
       echo -n "-----> Cleaning SASS... "
@@ -230,7 +230,7 @@ if [[ ! $GRUNT_ONLY ]]; then
         eval recess "$cssfile" $RECESS_LINT_OPTIONS | indent
         eval recess "$cssfile" --compile $RECESS_COMPILE_OPTIONS > "$fname.recess.css"; mv -f "$fname.recess.css" "$cssfile"
       done
-      echo "       done."
+      echo "done." | indent
     fi
 
     # CSS Minification -------------------------
@@ -247,7 +247,7 @@ if [[ ! $GRUNT_ONLY ]]; then
         cp "$fname.min.css" "$fname.$csssha1.css"
         echo "done"
       done
-      echo "       done."
+      echo "done." | indent
     fi
   fi
 
@@ -271,7 +271,7 @@ if [[ ! $GRUNT_ONLY ]]; then
           eval importer $importer_sm_optn $IMPORTER_CS_OPTIONS "$csfile" "${csfile%.*}.js" | indent
           echo "done"
         done
-        echo "       done."
+        echo "done." | indent
       else
         echo -n "-----> Making Coffee... "
         ack --coffee -g $EXCLUDE_DIRS --invert-file-match --print0 $build_dir | while read -d $'\0' csfile
@@ -294,14 +294,14 @@ if [[ ! $GRUNT_ONLY ]]; then
         eval importer $importer_sm_optn $IMPORTER_JS_OPTIONS "$jsfile" "$jsfile" | indent
         echo "done"
       done
-      echo "       done."
+      echo "done." | indent
     fi
 
     # Require.js -------------------------------
     if [[ $REQUIREJS ]]; then
       status "Running Require.js files..."
       eval r.js -o baseUrl=$build_dir $REQUIREJS_OPTIONS
-      echo "       done."
+      echo "done." | indent
     fi
 
     # Closure Compilation ----------------------
@@ -322,7 +322,7 @@ if [[ ! $GRUNT_ONLY ]]; then
         cp "$fname.min.js" "$fname.$jssha1.js"
         echo "done"
       done
-      echo "       done."
+      echo "done." | indent
     fi
   fi
 
@@ -333,7 +333,7 @@ if [[ ! $GRUNT_ONLY ]]; then
       status "Compiling Jade..."
       ack --jade -g $EXCLUDE_DIRS --invert-file-match --print0 $build_dir | while read -d $'\0' jadefile
       do eval jade $JADE_OPTIONS  "$jadefile" | indent; done
-      echo "       done."
+      echo "done." | indent
 
       echo -n "-----> Cleaning Jade... "
       ack --jade -g $EXCLUDE_DIRS --invert-file-match --print0 $build_dir | xargs -0 rm
@@ -354,7 +354,7 @@ if [[ ! $GRUNT_ONLY ]]; then
         eval java -jar $bp_dir/vendor/htmlcompressor-1.5.3.jar $HTML_COMPRESSOR_OPTIONS "$htmlfile" | indent
         echo "done"
       done
-      echo "       done."
+      echo "done." | indent
     fi
   fi
 

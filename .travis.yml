@@ -1,0 +1,8 @@
+language: ruby
+rvm:
+  - 1.9.3
+before_install:
+  - git submodule update --init --recursive
+  - wget -qO- https://toolbelt.heroku.com/install.sh | sh
+  - heroku plugins:install https://github.com/ddollar/heroku-anvil
+install: gem install rake

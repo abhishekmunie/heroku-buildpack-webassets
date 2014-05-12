@@ -158,7 +158,7 @@ if [[ ! $GRUNT_ONLY ]]; then
     fi
     echo "done." | indent
 
-    ack --ackrc=$bp_dir/vendor/.ackrc --dump
+    ack --ackrc=$bp_dir/vendor/.ackrc -f --less $build_dir
 
     # LESS -------------------------------------
     if [[ ! $NO_LESS ]]; then

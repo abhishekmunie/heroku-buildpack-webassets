@@ -83,7 +83,8 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
   if [[ ! $GRUNT_ONLY ]]; then
     # Ack! Installation ----------------------------
     echo -n "-----> Installing Ack!(http://betterthangrep.com)... "
-    mv $bp_dir/vendor/ack-standalone ~/bin/ack; export PATH=~/bin:$PATH
+    curl http://beyondgrep.com/ack-2.12-single-file > ~/bin/ack && chmod 0755 !#:3
+    export PATH=~/bin:$PATH
     (echo "--type-set=less=.less"; echo "--type-set=stylus=.styl"; echo "--type-set=sass=.sass"; echo "--type-set=scss=.scss"; echo "--type-set=coffee=.coffee"; echo "--type-set=jade=.jade"; echo "--type-set=haml=.haml") > ~/.ackrc
     echo "done"
 
@@ -175,7 +176,7 @@ if [[ ! $GRUNT_ONLY ]]; then
       done
       echo "done." | indent
 
-      echo -n "-----> Cleaning Less... "
+      echo -n "-----> Cleaning LESS... "
       ack --less -g $EXCLUDE_DIRS --invert-file-match --print0 $build_dir | xargs -0 rm
       echo "done"
     fi\

@@ -5,4 +5,17 @@
     "node": "0.10.x"
   },
   "dependencies": {
-    "coffee-script":     "latest"
+    "coffee-script": "latest",
+    "grunt": "latest",
+    "bower": "latest",
+    "grunt-contrib-less": "latest",
+    "grunt-contrib-compass": "latest",
+    "grunt-contrib-stylus": "latest",
+    "grunt-bless": "latest",
+    "grunt-recess": "latest",
+    "importer": "latest",
+    "requirejs": "latest",
+    "jade": "latest",
+    "grunt-cli": "latest"
+  }
+}

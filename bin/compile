@@ -20,150 +20,65 @@ source $bp_dir/bin/common.sh
 
 source "$build_dir/_webassets.cfg"
 
-# Default Configurations -----------------------
-HTML_COMPRESSOR_OPTIONS="--recursive --simple-bool-attr --preserve-server-script --compress-css --compress-js --js-compressor closure -o"
-EXCLUDE_DIRS="\..*|_.*|bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist|tmp|node_modules|bin|plugins|libs|components"
-EXCLUDE_DIRS="--ignore-file=(^|/)(${EXCLUDE_DIRS})($|/)"
+# Temporary Directories ------------------------
+RUBY_BUILDPACK_DIR=$(mktemp -d -t ruby.XXXXXX)
+NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
+TMP_BUILD_DIR=$(mktemp -d -t tmp_build.XXXXXX)
 
 # Dependencies Installation --------------------
-if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_LESS || ! $NO_STYLUS || ! $NO_RECESS ) ) || ( ! $NO_JS && ( ! $NO_JS_IMPORTER || ! $NO_CS_IMPORT || ! $NO_REQUIREJS ) ) || ( ! $NO_HTML && ( ! $NO_JADE ) ) ) ) ]]; then
-
-  # Node Installation --------------------------
-  status "Installing Node and build dependencies..."
-  mv $bp_dir/vendor/package-webassets.json $NODE_BUILD_DIR/package.json
-  if [[ ! $NO_GRUNT ]]; then
-    (echo ","; echo -n "    \"grunt\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-  fi
-  if [[ ! $GRUNT_ONLY ]]; then
-    if [[ ! $NO_BOWER ]]; then
-      (echo ","; echo -n "    \"bower\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-    fi
-    if [[ ! $NO_CSS ]]; then
-      if [[ ! $NO_LESS ]]; then
-        (echo ","; echo -n "    \"grunt-contrib-less\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-      fi
-      if [[ ! $NO_SASS ]]; then
-        if [[ condition ]]; then
-          (echo ","; echo -n "    \"grunt-contrib-compass\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-        fi
-      fi
-      if [[ ! $NO_STYLUS ]]; then
-        (echo ","; echo -n "    \"grunt-contrib-stylus\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-      fi
-      if [[ ! $NO_BLESS ]]; then
-        (echo ","; echo -n "    \"grunt-bless\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-      fi
-      if [[ ! $NO_RECESS ]]; then
-        (echo ","; echo -n "    \"grunt-recess\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-      fi
-    fi
-    if [[ ! $NO_JS ]]; then
-      if [[ ! $NO_JS_IMPORTER || ! $NO_CS_IMPORT ]]; then
-        (echo ","; echo -n "    \"importer\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-      fi
-      if [[ ! $NO_REQUIREJS ]]; then
-        (echo ","; echo -n "    \"requirejs\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-      fi
-    fi
-    if [[ ! $NO_HTML ]]; then
-      if [[ ! $NO_JADE ]]; then
-        (echo ","; echo -n "    \"jade\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-      fi
-    fi
-    if [[ ! $NO_GRUNT ]]; then
-      (echo ","; echo -n "    \"grunt-cli\": \"latest\"") >> $NODE_BUILD_DIR/package.json
-    fi
-  fi
-  (echo ""; echo "  }"; echo "}") >> $NODE_BUILD_DIR/package.json
-
-  NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
-  NODE_BUILD_DIR=$(mktemp -d -t node_build.XXXXXX)
-  git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BUILDPACK_DIR
-  chmod -f +x $NODE_BUILDPACK_DIR/bin/{detect,compile,release} || true
-  $NODE_BUILDPACK_DIR/bin/compile $NODE_BUILD_DIR $cache_dir
-  export PATH=$NODE_BUILD_DIR/vendor/node/bin:$NODE_BUILD_DIR/bin:$NODE_BUILD_DIR/node_modules/.bin:$PATH
-  echo "done." | indent
-
-  if [[ ! $GRUNT_ONLY ]]; then
-
-    RUBY_BUILD_DIR=$(mktemp -d -t ruby_build.XXXXXX)
-
-    if [[ ! $NO_CSS ]]; then
-      if [[ ! $NO_SASS ]]; then
-        # SASS & Compass Installation ----------------
-        status "Installing SASS..."
-        mkdir -p $RUBY_BUILD_DIR/.gem
-        gem install sass --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-        echo "done." | indent
-        if [ -f "$build_dir/config.rb" ]; then
-          status "Installing Compass..."
-          gem install compass --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-          echo "done." | indent
-        fi
-        # Bourbon Installation -----------------------
-        if [[ ! $NO_BOURBON ]]; then
-          status "Installing Bourbon..."
-          # gem install bourbon --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-          echo "done." | indent
-        fi
-      fi
-    fi
-
-    if [[ ! $NO_HTML ]]; then
-      if [[ ! $NO_HAML ]]; then
-        status "Installing Haml..."
-        gem install haml --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-        echo "done." | indent
-      fi
-      if [[ ! $NO_SLIM ]]; then
-        status "Installing Slim..."
-        gem install slim --no-rdoc --no-ri --install-dir $RUBY_BUILD_DIR/.gem | indent
-        echo "done." | indent
-      fi
-    fi
-    export GEM_PATH=$RUBY_BUILD_DIR/.gem:$GEM_PATH
-
-    if [[ ! $NO_CLOSURE_COMPILE || ! $NO_HTML_COMPRESSION  ]]; then
-      # Closure Compiler Fetch -----------------
-      echo -n "-----> Fetching Closure Compiler... "
-      curl --silent --location http://closure-compiler.googlecode.com/files/compiler-latest.tar.gz | tar xz -C $bp_dir/vendor/
-      echo "done"
-    fi
-  fi
+if [ -f $build_dir/grunt.js ] || [ -f $build_dir/Gruntfile.js ] || [ -f $build_dir/Gruntfile.coffee ]; then
+  status "Using existing Gruntfile."
+else
+  status "Using default Gruntfile."
+  mv $bp_dir/vendor/Gruntfile.js $TMP_BUILD_DIR/
 fi
 
-
-if [[ ! $GRUNT_ONLY ]]; then
-
-  if [[ ! $NO_SOURCE_MAP ]]; then
-    cs_sm_optn="--map"
-    importer_sm_optn="--source-map"
+if [ -f $TMP_BUILD_DIR/grunt-package.json ]; then
+  if [ -f $TMP_BUILD_DIR/package.json ]; then
+    mv $TMP_BUILD_DIR/package.json $build_dir/package.json
   fi
-
-  # Bower --------------------------------------
-  if [[ ! $NO_BOWER && -f $build_dir/component.json ]]; then
-    status "Installing components using Bower..."
-    eval bower install $BOWER_OPTIONS | indent
-    echo "done." | indent
-  fi
+  mv $TMP_BUILD_DIR/grunt-package.json $TMP_BUILD_DIR/package.json
 fi
 
-# Grunt Tasks --------------------------------
-if [[ $USE_GRUNT ]]; then
-  cd $build_dir
-  grunt $GRUNT_OPTIONS heroku
+if [ ! -f $TMP_BUILD_DIR/package.json ]; then
+  mv $bp_dir/vendor/package-webassets.json $TMP_BUILD_DIR/package.json
 fi
+if [ ! -f $TMP_BUILD_DIR/Gemfile.lock ]; then
+  mv $bp_dir/vendor/Gemfile.lock $TMP_BUILD_DIR/
+fi
+
+mkdir -p $cache_dir/webassets
+
+# Ruby Installation --------------------------
+status "Installing Ruby and gem dependencies..."
+git clone --quiet https://github.com/heroku/heroku-buildpack-ruby.git $RUBY_BUILDPACK_DIR
+chmod -f +x $RUBY_BUILDPACK_DIR/bin/{detect,compile,release} || true
+$RUBY_BUILDPACK_DIR/bin/compile $TMP_BUILD_DIR $cache_dir/webassets
+export GEM_HOME=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0
+export GEM_PATH=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH
+
+# Node Installation --------------------------
+status "Installing Node and build dependencies..."
+git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BUILDPACK_DIR
+chmod -f +x $NODE_BUILDPACK_DIR/bin/{detect,compile,release} || true
+$NODE_BUILDPACK_DIR/bin/compile $TMP_BUILD_DIR $cache_dir/webassets
+
+status "Running Grunt Task heroku..."
+curr_dir=$(pwd)
+cd $build_dir
+PATH=$TMP_BUILD_DIR/vendor/node/bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/node_modules/.bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/vendor/bundle/bin:$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH grunt heroku --dest $build_dir | indent
+cd $curr_dir
 
 if [[ $USE_STATIC_SERVER ]]; then
   status "Initializing Static Server..."
   STATIC_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
   git clone --quiet https://github.com/abhishekmunie/heroku-buildpack-static.git $STATIC_BUILDPACK_DIR
   chmod -f +x $STATIC_BUILDPACK_DIR/bin/{detect,compile,release} || true
-  $STATIC_BUILDPACK_DIR/bin/compile $build_dir $cache_dir
+  $STATIC_BUILDPACK_DIR/bin/compile $build_dir $cache_dir/webassets
   rm -fr $STATIC_BUILDPACK_DIR
 fi
 
 # Cleanup ------------------------------------
 rm -fr $NODE_BUILDPACK_DIR
-rm -fr $NODE_BUILD_DIR
+rm -fr $TMP_BUILD_DIR
 rm -fr $STATIC_BUILDPACK_DIR

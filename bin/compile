@@ -88,7 +88,10 @@ $NODE_BUILDPACK_DIR/bin/compile $TMP_BUILD_DIR $cache_dir/webassets
 status "Running Grunt Task heroku..."
 curr_dir=$(pwd)
 cd $TMP_BUILD_DIR
-GEM_HOME=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0 GEM_PATH=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH PATH=$TMP_BUILD_DIR/vendor/node/bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/node_modules/.bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/vendor/bundle/bin:$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH grunt heroku --dest $build_dir | indent
+GEM_HOME=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0 \
+GEM_PATH=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH \
+PATH=$TMP_BUILD_DIR/vendor/node/bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/node_modules/.bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/vendor/bundle/bin:$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH \
+grunt heroku --dest $build_dir | indent
 cd $curr_dir
 
 if [[ $USE_STATIC_SERVER ]]; then

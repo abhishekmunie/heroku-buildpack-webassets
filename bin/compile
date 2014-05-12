@@ -84,7 +84,7 @@ if [[ ! $NO_GRUNT || ( ! $GRUNT_ONLY && ( ! $NO_BOWER || ( ! $NO_CSS && ( ! $NO_
     # Ack! Installation ----------------------------
     echo -n "-----> Installing Ack!(http://betterthangrep.com)... "
     mv $bp_dir/vendor/ack-standalone ~/bin/ack; export PATH=~/bin:$PATH
-    (echo "--type-set=less=.less"; echo "--type-set=stylus=.styl"; echo "--type-set=sass=.sass"; echo "--type-set=scss=.scss"; echo "--type-set=coffee=.coffee"; echo "--type-set=jade=.jade") > ~/.ackrc
+    (echo "--type-set=less=.less"; echo "--type-set=stylus=.styl"; echo "--type-set=sass=.sass"; echo "--type-set=scss=.scss"; echo "--type-set=coffee=.coffee"; echo "--type-set=jade=.jade"; echo "--type-set=haml=.haml") > ~/.ackrc
     echo "done"
 
     RUBY_BUILD_DIR=$(mktemp -d -t ruby_build.XXXXXX)
@@ -342,7 +342,14 @@ if [[ ! $GRUNT_ONLY ]]; then
 
     # Haml -------------------------------------\
     if [[ ! $NO_HAML ]]; then
+      status "Compiling Haml..."
+      ack --haml -g $EXCLUDE_DIRS --invert-file-match --print0 $build_dir | while read -d $'\0' hamlfile
+      do eval haml $HAML_OPTIONS  "$hamlfile" | indent; done
+      echo "done." | indent
 
+      echo -n "-----> Cleaning Haml... "
+      ack --haml -g $EXCLUDE_DIRS --invert-file-match --print0 $build_dir | xargs -0 rm
+      echo "done"
     fi
 
     # HTML Compression -------------------------

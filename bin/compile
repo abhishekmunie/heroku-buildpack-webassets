@@ -100,10 +100,11 @@ GEM_HOME=$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0 \
 GEM_PATH=$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH \
 PATH=$TMP_BUILD_DIR/vendor/node/bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/node_modules/.bin:$PATH \
 PATH=$RUBY_BUILD_DIR/bin:$RUBY_BUILD_DIR/vendor/bundle/bin:$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH \
-grunt heroku:$NODE_ENV --dest $build_dir | indent
+grunt heroku:$NODE_ENV --destination $build_dir | indent
 cd $curr_dir
 
-if [[ $USE_STATIC_SERVER ]]; then
+if [[ $USE_STATIC_SERVER ]] && [ -f $TMP_BUILD_DIR/_static.cfg]; then
+  mv $TMP_BUILD_DIR/_static.cfg $build_dir
   status "Initializing Static Server..."
   STATIC_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
   git clone --quiet https://github.com/abhishekmunie/heroku-buildpack-static.git $STATIC_BUILDPACK_DIR

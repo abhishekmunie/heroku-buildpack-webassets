@@ -103,7 +103,7 @@ PATH=$RUBY_BUILD_DIR/bin:$RUBY_BUILD_DIR/vendor/bundle/bin:$RUBY_BUILD_DIR/vendo
 grunt heroku:$NODE_ENV --destination $build_dir | indent
 cd $curr_dir
 
-if [[ $USE_STATIC_SERVER ]] && [ -f $BUIlD_DIR/_static.cfg]; then
+if [[ $USE_STATIC_SERVER ]] && [ -f $BUIlD_DIR/_static.cfg ]; then
   # mv $BUIlD_DIR/_static.cfg $build_dir
   status "Initializing Static Server..."
   STATIC_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)

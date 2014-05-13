@@ -22,6 +22,7 @@ source "$build_dir/_webassets.cfg"
 
 # Temporary Directories ------------------------
 RUBY_BUILDPACK_DIR=$(mktemp -d -t ruby.XXXXXX)
+VENDOR_DIR=$(mktemp -d -t vendor.XXXXXX)
 NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
 TMP_BUILD_DIR=$(mktemp -d -t tmp_build.XXXXXX)
 
@@ -85,13 +86,16 @@ git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BU
 chmod -f +x $NODE_BUILDPACK_DIR/bin/{detect,compile,release} || true
 $NODE_BUILDPACK_DIR/bin/compile $TMP_BUILD_DIR $cache_dir/webassets
 
+mv $TMP_BUILD_DIR/vendor $VENDOR_DIR/
+
 status "Running Grunt Task heroku..."
 curr_dir=$(pwd)
 cd $TMP_BUILD_DIR
 ls
 GEM_HOME=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0 \
 GEM_PATH=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH \
-PATH=$TMP_BUILD_DIR/vendor/node/bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/node_modules/.bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/vendor/bundle/bin:$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH \
+PATH=$VENDOR_DIR/vendor/node/bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/node_modules/.bin:$PATH \
+PATH=$TMP_BUILD_DIR/bin:$VENDOR_DIR/vendor/bundle/bin:$VENDOR_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH \
 grunt heroku:$NODE_ENV --dest $build_dir | indent
 cd $curr_dir
 

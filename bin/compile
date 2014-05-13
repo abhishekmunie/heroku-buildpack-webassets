@@ -26,58 +26,58 @@ RUBY_BUILD_DIR=$(mktemp -d -t ruby_build.XXXXXX)
 NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
 # TMP_BUILD_DIR=$(mktemp -d -t tmp_build.XXXXXX)
 
-mv $build_dir/* $BUIlD_DIR
+mv $build_dir/* $build_dir
 
 # Dependencies Installation --------------------
-if [ -f $BUIlD_DIR/grunt.js ] || [ -f $BUIlD_DIR/Gruntfile.js ] || [ -f $BUIlD_DIR/Gruntfile.coffee ]; then
+if [ -f $build_dir/grunt.js ] || [ -f $build_dir/Gruntfile.js ] || [ -f $build_dir/Gruntfile.coffee ]; then
   status "Using existing Gruntfile."
 else
   status "Using default Gruntfile."
-  mv $bp_dir/vendor/Gruntfile.js $BUIlD_DIR/
+  mv $bp_dir/vendor/Gruntfile.js $build_dir/
 fi
 
-if [ -f $BUIlD_DIR/grunt-package.json ]; then
+if [ -f $build_dir/grunt-package.json ]; then
   status "Using existing grunt-package."
-  if [ -f $BUIlD_DIR/package.json ]; then
+  if [ -f $build_dir/package.json ]; then
     status "Preserving existing grunt-package."
-    mv $BUIlD_DIR/package.json $build_dir/package.json
+    mv $build_dir/package.json $build_dir/package.json
   fi
-  mv $BUIlD_DIR/grunt-package.json $BUIlD_DIR/package.json
+  mv $build_dir/grunt-package.json $build_dir/package.json
 fi
 
-if [ -f $BUIlD_DIR/grunt-Gemfile ]; then
+if [ -f $build_dir/grunt-Gemfile ]; then
   status "Using existing grunt-Gemfile."
-  if [ -f $BUIlD_DIR/Gemfile ]; then
+  if [ -f $build_dir/Gemfile ]; then
     status "Preserving existing Gemfile."
-    mv $BUIlD_DIR/Gemfile $build_dir/Gemfile
+    mv $build_dir/Gemfile $build_dir/Gemfile
   fi
-  mv $BUIlD_DIR/grunt-Gemfile $BUIlD_DIR/Gemfile
+  mv $build_dir/grunt-Gemfile $build_dir/Gemfile
 fi
 
-if [ -f $BUIlD_DIR/grunt-Gemfile.lock ]; then
+if [ -f $build_dir/grunt-Gemfile.lock ]; then
   status "Using existing grunt-Gemfile.lock."
-  if [ -f $BUIlD_DIR/Gemfile.lock ]; then
+  if [ -f $build_dir/Gemfile.lock ]; then
     status "Preserving existing Gemfile.lock."
-    mv $BUIlD_DIR/Gemfile.lock $build_dir/Gemfile.lock
+    mv $build_dir/Gemfile.lock $build_dir/Gemfile.lock
   fi
-  mv $BUIlD_DIR/grunt-Gemfile.lock $BUIlD_DIR/Gemfile.lock
+  mv $build_dir/grunt-Gemfile.lock $build_dir/Gemfile.lock
 fi
 
-if [ ! -f $BUIlD_DIR/package.json ]; then
+if [ ! -f $build_dir/package.json ]; then
   status "Using default package."
-  mv $bp_dir/vendor/package-webassets.json $BUIlD_DIR/package.json
+  mv $bp_dir/vendor/package-webassets.json $build_dir/package.json
 fi
-if [ ! -f $BUIlD_DIR/Gemfile ]; then
+if [ ! -f $build_dir/Gemfile ]; then
   status "Using default Gemfile."
-  mv $bp_dir/vendor/Gemfile $BUIlD_DIR/
+  mv $bp_dir/vendor/Gemfile $build_dir/
 fi
-if [ ! -f $BUIlD_DIR/Gemfile.lock ]; then
+if [ ! -f $build_dir/Gemfile.lock ]; then
   status "Using default Gemfile.lock."
-  mv $bp_dir/vendor/Gemfile.lock $BUIlD_DIR/
+  mv $bp_dir/vendor/Gemfile.lock $build_dir/
 fi
 
-mv $BUIlD_DIR/Gemfile $RUBY_BUILD_DIR/
-mv $BUIlD_DIR/Gemfile.lock $RUBY_BUILD_DIR/
+mv $build_dir/Gemfile $RUBY_BUILD_DIR/
+mv $build_dir/Gemfile.lock $RUBY_BUILD_DIR/
 
 mkdir -p $cache_dir/webassets
 
@@ -91,20 +91,20 @@ $RUBY_BUILDPACK_DIR/bin/compile $RUBY_BUILD_DIR $cache_dir/webassets
 status "Installing Node and build dependencies..."
 git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BUILDPACK_DIR
 chmod -f +x $NODE_BUILDPACK_DIR/bin/{detect,compile,release} || true
-$NODE_BUILDPACK_DIR/bin/compile $BUIlD_DIR $cache_dir/webassets
+$NODE_BUILDPACK_DIR/bin/compile $build_dir $cache_dir/webassets
 
 status "Running Grunt Task heroku..."
 curr_dir=$(pwd)
-cd $BUIlD_DIR
+cd $build_dir
 GEM_HOME=$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0 \
 GEM_PATH=$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH \
-PATH=$BUIlD_DIR/vendor/node/bin:$BUIlD_DIR/bin:$BUIlD_DIR/node_modules/.bin:$PATH \
+PATH=$build_dir/vendor/node/bin:$build_dir/bin:$build_dir/node_modules/.bin:$PATH \
 PATH=$RUBY_BUILD_DIR/bin:$RUBY_BUILD_DIR/vendor/bundle/bin:$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH \
 grunt heroku:$NODE_ENV --destination $build_dir | indent
 cd $curr_dir
 
-if [[ $USE_STATIC_SERVER ]] && [ -f $BUIlD_DIR/_static.cfg ]; then
-  # mv $BUIlD_DIR/_static.cfg $build_dir
+if [[ $USE_STATIC_SERVER ]] && [ -f $build_dir/_static.cfg ]; then
+  # mv $build_dir/_static.cfg $build_dir
   status "Initializing Static Server..."
   STATIC_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
   git clone --quiet https://github.com/abhishekmunie/heroku-buildpack-static.git $STATIC_BUILDPACK_DIR
@@ -115,5 +115,5 @@ fi
 
 # Cleanup ------------------------------------
 rm -fr $NODE_BUILDPACK_DIR
-rm -fr $BUIlD_DIR
+rm -fr $build_dir
 rm -fr $STATIC_BUILDPACK_DIR

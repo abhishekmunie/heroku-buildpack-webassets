@@ -92,8 +92,8 @@ status "Running Grunt Task heroku..."
 curr_dir=$(pwd)
 cd $TMP_BUILD_DIR
 ls
-GEM_HOME=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0 \
-GEM_PATH=$TMP_BUILD_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH \
+GEM_HOME=$VENDOR_DIR/vendor/bundle/ruby/2.1.0 \
+GEM_PATH=$VENDOR_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH \
 PATH=$VENDOR_DIR/vendor/node/bin:$TMP_BUILD_DIR/bin:$TMP_BUILD_DIR/node_modules/.bin:$PATH \
 PATH=$TMP_BUILD_DIR/bin:$VENDOR_DIR/vendor/bundle/bin:$VENDOR_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH \
 grunt heroku:$NODE_ENV --dest $build_dir | indent

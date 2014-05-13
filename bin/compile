@@ -104,7 +104,7 @@ grunt heroku:$NODE_ENV --destination $build_dir | indent
 cd $curr_dir
 
 if [[ $USE_STATIC_SERVER ]] && [ -f $build_dir/_static.cfg ]; then
-  # mv $build_dir/_static.cfg $build_dir
+  # mv $TMP_BUILD_DIR/_static.cfg $build_dir
   status "Initializing Static Server..."
   STATIC_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
   git clone --quiet https://github.com/abhishekmunie/heroku-buildpack-static.git $STATIC_BUILDPACK_DIR

@@ -99,8 +99,8 @@ rm -fr $node_buildpack_dir
 status "Running Grunt Task heroku..."
 curr_dir=$(pwd)
 cd $grunt_build_dir
-ls
-mv $grunt_build_dir/node_modules $build_dir/
+mkdir $build_dir/node_modules
+mv $grunt_build_dir/node_modules/grunt $build_dir/node_modules
 GEM_HOME=$ruby_build_dir/vendor/bundle/ruby/2.1.0 \
 GEM_PATH=$ruby_build_dir/vendor/bundle/ruby/2.1.0:$GEM_PATH \
 PATH=$grunt_build_dir/vendor/node/bin:$grunt_build_dir/bin:$grunt_build_dir/node_modules/.bin:$PATH \

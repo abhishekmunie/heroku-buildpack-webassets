@@ -100,13 +100,13 @@ status "Running Grunt Task heroku..."
 curr_dir=$(pwd)
 cd $grunt_build_dir
 mkdir $build_dir/node_modules
-cp -r $grunt_build_dir/node_modules $build_dir
+cp -r $grunt_build_dir/node_modules $build_dir/
 GEM_HOME=$ruby_build_dir/vendor/bundle/ruby/2.1.0 \
 GEM_PATH=$ruby_build_dir/vendor/bundle/ruby/2.1.0:$GEM_PATH \
 PATH=$grunt_build_dir/vendor/node/bin:$grunt_build_dir/bin:$grunt_build_dir/node_modules/.bin:$PATH \
 PATH=$ruby_build_dir/bin:$ruby_build_dir/vendor/bundle/bin:$ruby_build_dir/vendor/bundle/ruby/2.1.0/bin:$PATH \
 grunt --base $build_dir heroku:$NODE_ENV | indent
-rm -fr $build_dir/node_modules/grunt
+rm -fr $build_dir/node_modules
 cd $curr_dir
 
 if [[ $USE_STATIC_SERVER ]] && [ -f $build_dir/_static.cfg ]; then

@@ -21,8 +21,8 @@ source $bp_dir/bin/common.sh
 source "$build_dir/_webassets.cfg"
 
 # Temporary Directories ------------------------
-RUBY_BUILD_DIR=$(mktemp -d -t ruby_build.XXXXXX)
-GRUNT_BUILD_DIR=$(mktemp -d -t grunt_build.XXXXXX)
+ruby_build_dir=$(mktemp -d -t ruby_build.XXXXXX)
+grunt_build_dir=$(mktemp -d -t grunt_build.XXXXXX)
 
 # mv $build_dir/* $TMP_BUILD_DIR
 
@@ -31,84 +31,91 @@ if [ -f $build_dir/grunt.js ] || [ -f $build_dir/Gruntfile.js ] || [ -f $build_d
   status "Using existing Gruntfile."
   if [ -f $build_dir/grunt-package.json ]; then
     status "Using existing grunt-package."
-    mv $build_dir/grunt-package.json $GRUNT_BUILD_DIR/package.json
+    mv $build_dir/grunt-package.json $grunt_build_dir/package.json
   elif [ -f $build_dir/package.json ]; then
     status "Using existing package."
-    cp $build_dir/package.json $GRUNT_BUILD_DIR/package.json
+    cp $build_dir/package.json $grunt_build_dir/package.json
   fi
 
   if [ -f $build_dir/grunt-Gemfile ]; then
     status "Using existing grunt-Gemfile."
-    mv $build_dir/grunt-Gemfile $RUBY_BUILD_DIR/Gemfile
+    mv $build_dir/grunt-Gemfile $ruby_build_dir/Gemfile
   elif [ -f $build_dir/Gemfile ]; then
     status "Using existing Gemfile."
-    cp $build_dir/Gemfile $RUBY_BUILD_DIR/Gemfile
+    cp $build_dir/Gemfile $ruby_build_dir/Gemfile
   fi
 
   if [ -f $build_dir/grunt-Gemfile.lock ]; then
     status "Using existing grunt-Gemfile.lock."
-    mv $build_dir/grunt-Gemfile.lock $RUBY_BUILD_DIR/Gemfile.lock
+    mv $build_dir/grunt-Gemfile.lock $ruby_build_dir/Gemfile.lock
   elif [ -f $build_dir/Gemfile.lock ]; then
     status "Using existing Gemfile.lock."
-    cp $build_dir/Gemfile.lock $RUBY_BUILD_DIR/Gemfile.lock
+    cp $build_dir/Gemfile.lock $ruby_build_dir/Gemfile.lock
+  fi
+  if [ -f $build_dir/grunt.js ]; then
+    mv $build_dir/grunt.js $grunt_build_dir/grunt.js
+  elif [ -f $build_dir/Gruntfile.js ]; then
+    mv $build_dir/Gruntfile.js $grunt_build_dir/Gruntfile.js
+  elif [ -f $build_dir/Gruntfile.coffee ]; then
+    mv $build_dir/Gruntfile.coffee $grunt_build_dir/Gruntfile.coffee
   fi
 else
   status "Using default Gruntfile."
-  mv $bp_dir/vendor/Gruntfile.js $GRUNT_BUILD_DIR/
+  mv $bp_dir/vendor/Gruntfile.js $grunt_build_dir/
 fi
 
 
-if [ ! -f $GRUNT_BUILD_DIR/package.json ]; then
+if [ ! -f $grunt_build_dir/package.json ]; then
   status "Using default package."
-  mv $bp_dir/vendor/package-webassets.json $GRUNT_BUILD_DIR/package.json
+  mv $bp_dir/vendor/package-webassets.json $grunt_build_dir/package.json
 fi
-if [ ! -f $RUBY_BUILD_DIR/Gemfile ]; then
+if [ ! -f $ruby_build_dir/Gemfile ]; then
   status "Using default Gemfile."
-  mv $bp_dir/vendor/Gemfile $RUBY_BUILD_DIR/
+  mv $bp_dir/vendor/Gemfile $ruby_build_dir/
 fi
-if [ ! -f $RUBY_BUILD_DIR/Gemfile.lock ]; then
+if [ ! -f $ruby_build_dir/Gemfile.lock ]; then
   status "Using default Gemfile.lock."
-  mv $bp_dir/vendor/Gemfile.lock $RUBY_BUILD_DIR/
+  mv $bp_dir/vendor/Gemfile.lock $ruby_build_dir/
 fi
 
 mkdir -p $cache_dir/webassets
 
 # Ruby Installation --------------------------
 status "Installing Ruby and gem dependencies..."
-RUBY_BUILDPACK_DIR=$(mktemp -d -t ruby.XXXXXX)
-git clone --quiet https://github.com/heroku/heroku-buildpack-ruby.git $RUBY_BUILDPACK_DIR
-chmod -f +x $RUBY_BUILDPACK_DIR/bin/{detect,compile,release} || true
-$RUBY_BUILDPACK_DIR/bin/compile $RUBY_BUILD_DIR $cache_dir/webassets
-rm -fr $RUBY_BUILDPACK_DIR
+ruby_buildpack_dir=$(mktemp -d -t ruby.XXXXXX)
+git clone --quiet https://github.com/heroku/heroku-buildpack-ruby.git $ruby_buildpack_dir
+chmod -f +x $ruby_buildpack_dir/bin/{detect,compile,release} || true
+$ruby_buildpack_dir/bin/compile $ruby_build_dir $cache_dir/webassets
+rm -fr $ruby_buildpack_dir
 
 # Node Installation --------------------------
 status "Installing Node and build dependencies..."
-NODE_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
-git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $NODE_BUILDPACK_DIR
-chmod -f +x $NODE_BUILDPACK_DIR/bin/{detect,compile,release} || true
-$NODE_BUILDPACK_DIR/bin/compile $GRUNT_BUILD_DIR $cache_dir/webassets
-rm -fr $NODE_BUILDPACK_DIR
+node_buildpack_dir=$(mktemp -d -t node.XXXXXX)
+git clone --quiet https://github.com/heroku/heroku-buildpack-nodejs.git $node_buildpack_dir
+chmod -f +x $node_buildpack_dir/bin/{detect,compile,release} || true
+$node_buildpack_dir/bin/compile $grunt_build_dir $cache_dir/webassets
+rm -fr $node_buildpack_dir
 
 status "Running Grunt Task heroku..."
 curr_dir=$(pwd)
-cd $GRUNT_BUILD_DIR
-GEM_HOME=$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0 \
-GEM_PATH=$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0:$GEM_PATH \
-PATH=$GRUNT_BUILD_DIR/vendor/node/bin:$GRUNT_BUILD_DIR/bin:$GRUNT_BUILD_DIR/node_modules/.bin:$PATH \
-PATH=$RUBY_BUILD_DIR/bin:$RUBY_BUILD_DIR/vendor/bundle/bin:$RUBY_BUILD_DIR/vendor/bundle/ruby/2.1.0/bin:$PATH \
+cd $grunt_build_dir
+GEM_HOME=$ruby_build_dir/vendor/bundle/ruby/2.1.0 \
+GEM_PATH=$ruby_build_dir/vendor/bundle/ruby/2.1.0:$GEM_PATH \
+PATH=$grunt_build_dir/vendor/node/bin:$grunt_build_dir/bin:$grunt_build_dir/node_modules/.bin:$PATH \
+PATH=$ruby_build_dir/bin:$ruby_build_dir/vendor/bundle/bin:$ruby_build_dir/vendor/bundle/ruby/2.1.0/bin:$PATH \
 grunt --base $build_dir heroku:$NODE_ENV | indent
 cd $curr_dir
 
 if [[ $USE_STATIC_SERVER ]] && [ -f $build_dir/_static.cfg ]; then
   # mv $TMP_BUILD_DIR/_static.cfg $build_dir
   status "Initializing Static Server..."
-  STATIC_BUILDPACK_DIR=$(mktemp -d -t node.XXXXXX)
-  git clone --quiet https://github.com/abhishekmunie/heroku-buildpack-static.git $STATIC_BUILDPACK_DIR
-  chmod -f +x $STATIC_BUILDPACK_DIR/bin/{detect,compile,release} || true
-  $STATIC_BUILDPACK_DIR/bin/compile $build_dir $cache_dir/webassets
-  rm -fr $STATIC_BUILDPACK_DIR
+  static_buildpack_dir=$(mktemp -d -t node.XXXXXX)
+  git clone --quiet https://github.com/abhishekmunie/heroku-buildpack-static.git $static_buildpack_dir
+  chmod -f +x $static_buildpack_dir/bin/{detect,compile,release} || true
+  $static_buildpack_dir/bin/compile $build_dir $cache_dir/webassets
+  rm -fr $static_buildpack_dir
 fi
 
 # Cleanup ------------------------------------
-rm -fr $RUBY_BUILD_DIR
-rm -fr $GRUNT_BUILD_DIR
+rm -fr $ruby_build_dir
+rm -fr $grunt_build_dir

@@ -39,18 +39,18 @@ if [ -f $build_dir/grunt.js ] || [ -f $build_dir/Gruntfile.js ] || [ -f $build_d
 
   if [ -f $build_dir/grunt-Gemfile ]; then
     status "Using existing grunt-Gemfile."
-    mv $build_dir/grunt-Gemfile $GRUNT_BUILD_DIR/Gemfile
+    mv $build_dir/grunt-Gemfile $RUBY_BUILD_DIR/Gemfile
   elif [ -f $build_dir/Gemfile ]; then
     status "Using existing Gemfile."
-    cp $build_dir/Gemfile $GRUNT_BUILD_DIR/Gemfile
+    cp $build_dir/Gemfile $RUBY_BUILD_DIR/Gemfile
   fi
 
   if [ -f $build_dir/grunt-Gemfile.lock ]; then
     status "Using existing grunt-Gemfile.lock."
-    mv $build_dir/grunt-Gemfile.lock $GRUNT_BUILD_DIR/Gemfile.lock
+    mv $build_dir/grunt-Gemfile.lock $RUBY_BUILD_DIR/Gemfile.lock
   elif [ -f $build_dir/Gemfile.lock ]; then
     status "Using existing Gemfile.lock."
-    cp $build_dir/Gemfile.lock $GRUNT_BUILD_DIR/Gemfile.lock
+    cp $build_dir/Gemfile.lock $RUBY_BUILD_DIR/Gemfile.lock
   fi
 else
   status "Using default Gruntfile."
